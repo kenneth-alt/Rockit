@@ -3,6 +3,7 @@ import cors from 'cors';
 import simpleGit from 'simple-git';
 import path from 'path';
 import { generateId } from './utils/generateId';
+import { extractRepoFiles } from './utils/extractRepoFiles';
 
 const app = express();
 app.use(cors());
@@ -13,14 +14,26 @@ app.get('/', (req: Request, res: Response) => {
   res.send('Hello, Express server is working!');
 });
 
-app.post('/deploy', (req: Request, res: Response) => {
+app.post('/deploy', async (req: Request, res: Response) => {
   const repoUrl = req.body.repoUrl;
   const id = generateId();
-  simpleGit().clone(repoUrl, path.join(__dirname, `output/${id}`));
+  const outputDirPath = path.join(__dirname, `output/${id}`);
 
-  res.json({
-    id: id,
-  });
+  try {
+    // Clone the repository
+    await simpleGit().clone(repoUrl, outputDirPath);
+
+    // Extract repository files
+    const repoFiles = extractRepoFiles(outputDirPath);
+    console.log(repoFiles);
+
+    res.json({
+      id: id,
+    });
+  } catch (error) {
+    console.error('Error during cloning:', error);
+    res.status(500).json({ error: 'Failed to clone repository' });
+  }
 });
 
 const PORT = 3001;
