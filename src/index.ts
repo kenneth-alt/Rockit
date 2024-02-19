@@ -23,20 +23,33 @@ app.post('/deploy', async (req: Request, res: Response) => {
   try {
     // Clone the repository
     await simpleGit().clone(repoUrl, outputDirPath);
-
-    // Extract repository files
-    const repoFiles = extractRepoFiles(outputDirPath);
-
-    // Upload files to S3
-    await uploadToS3(repoFiles, 'rockit1688');
-
-    res.json({
-      id: id,
-    });
   } catch (error) {
     console.error('Error during cloning:', error);
-    res.status(500).json({ error: 'Failed to clone repository' });
+    return res.status(500).json({ error: 'Failed to clone repository' });
   }
+
+  let repoFiles: string[];
+  try {
+    // Extract repository files
+    repoFiles = extractRepoFiles(outputDirPath);
+  } catch (error) {
+    console.error('Error during extraction:', error);
+    return res
+      .status(500)
+      .json({ error: 'Failed to extract repository files' });
+  }
+
+  try {
+    // Upload files to S3
+    await uploadToS3(repoFiles, id, 'rockit1688');
+  } catch (error) {
+    console.error('Error during upload:', error);
+    return res.status(500).json({ error: 'Failed to upload files to S3' });
+  }
+
+  res.json({
+    id: id,
+  });
 });
 
 const PORT = 3001;
