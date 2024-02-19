@@ -4,6 +4,7 @@ import simpleGit from 'simple-git';
 import path from 'path';
 import { generateId } from './utils/generateId';
 import { extractRepoFiles } from './utils/extractRepoFiles';
+import { uploadToS3 } from './utils/uploadToS3';
 
 const app = express();
 app.use(cors());
@@ -25,7 +26,9 @@ app.post('/deploy', async (req: Request, res: Response) => {
 
     // Extract repository files
     const repoFiles = extractRepoFiles(outputDirPath);
-    console.log(repoFiles);
+
+    // Upload files to S3
+    await uploadToS3(repoFiles, 'rockit1688');
 
     res.json({
       id: id,
